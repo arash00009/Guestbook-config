@@ -25,8 +25,6 @@ spec:
         app: arash-guestbook
         component: frontend
     spec:
-      imagePullSecrets:
-      - name: quay-io-secret
       securityContext:
         runAsNonRoot: true
         seccompProfile:
