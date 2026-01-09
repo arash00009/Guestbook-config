@@ -1,5 +1,13 @@
 ---
-# Frontend Deployment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arash-frontend-config
+  namespace: grupp3
+data:
+  BACKEND_URL: "http://arash-backend-grupp3.apps.devops24.cloud2.se"
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,13 +27,24 @@ spec:
     spec:
       imagePullSecrets:
       - name: quay-io-secret
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: frontend
-        image: quay.io/arashrahimi/arashr-frontend:latest
+        image: quay.io/arashrahimi/arashr-frontend:REPLACE_BY_CI
         imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
         env:
         - name: REACT_APP_BACKEND_URL
-          value: "http://arash-backend-grupp3.apps.devops24.cloud2.se"
+          valueFrom:
+            configMapKeyRef:
+              name: arash-frontend-config
+              key: BACKEND_URL
         ports:
         - containerPort: 8080
         resources:
@@ -40,16 +59,13 @@ spec:
             path: /
             port: 8080
           initialDelaySeconds: 10
-          periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /
             port: 8080
           initialDelaySeconds: 5
-          periodSeconds: 5
 
 ---
-# Frontend Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -65,7 +81,6 @@ spec:
     targetPort: 8080
 
 ---
-# Frontend Route
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
