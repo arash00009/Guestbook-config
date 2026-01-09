@@ -217,7 +217,7 @@ spec:
       - name: quay-io-secret
       containers:
       - name: backend
-        image: quay.io/arashrahimi/arashr-backend:latest
+        image: quay.io/arashrahimi/arashr:1.0.12-ed17191
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
