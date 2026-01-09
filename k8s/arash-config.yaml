@@ -10,3 +10,4 @@ data:
   db-user: postgres
   redis-host: arash-redis
   redis-port: "6379"
+  APP_VERSION: "REPLACE_BY_CI"
