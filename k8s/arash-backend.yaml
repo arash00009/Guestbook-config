@@ -24,11 +24,6 @@ stringData:
 
 ---
 apiVersion: v1
-kind: Secret
-metadata:
-
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: arash-postgres-pvc
@@ -80,6 +75,16 @@ spec:
             configMapKeyRef:
               name: arash-db-config
               key: db-name
+        - name: POSTGRESQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: arash-db-config
+              key: db-user
+        - name: POSTGRESQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: arash-db-password
+              key: password
         ports:
         - containerPort: 5432
         volumeMounts:
@@ -144,5 +149,17 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop: [ALL]
-        ports:
-        - containerPort: 8080
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: arash-db-config
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: arash-db-config
+              key: db-port
+        - name: DB_NAME
+          valueFrom:
+            configMap<span class="cursor">█</span>
