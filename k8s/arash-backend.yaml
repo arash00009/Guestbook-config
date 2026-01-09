@@ -25,6 +25,17 @@ stringData:
   password: arash-password-123
 
 ---
+# Quay.io Pull Secret (lägg till om du använder privat repo)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quay-io-secret
+  namespace: grupp3
+type: kubernetes.io/dockercfg
+data:
+  .dockercfg: eyJxdWF5LmlvIjp7ImF1dGgiOiJhcmFzaHJhaGltaTp7UEFTUzogREVDODAxMzA0fSJ9fQ==
+
+---
 # PostgreSQL PVC
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -202,9 +213,11 @@ spec:
         app: arash-guestbook
         component: backend
     spec:
+      imagePullSecrets:
+      - name: quay-io-secret
       containers:
       - name: backend
-        image: arashr/arash-guestbook:backend
+        image: quay.io/arashrahimi/arashr-backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -251,6 +264,18 @@ spec:
           limits:
             cpu: 80m
             memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
 
 ---
 # Backend Service
@@ -302,9 +327,11 @@ spec:
         app: arash-guestbook
         component: frontend
     spec:
+      imagePullSecrets:
+      - name: quay-io-secret
       containers:
       - name: frontend
-        image: arashr/arash-guestbook:frontend
+        image: quay.io/arashrahimi/arashr-frontend:latest
         imagePullPolicy: Always
         env:
         - name: REACT_APP_BACKEND_URL
@@ -318,6 +345,18 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
 
 ---
 # Frontend Service
