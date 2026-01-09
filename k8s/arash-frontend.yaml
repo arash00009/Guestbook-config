@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: frontend
-        image: quay.io/arashrahimi/arashr-frontend:REPLACE_BY_CI
+        image: quay.io/arashrahimi/arashr-frontend:latest
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false

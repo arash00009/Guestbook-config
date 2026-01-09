@@ -26,11 +26,6 @@ stringData:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: quay-io-secret
-  namespace: grupp3
-type: kubernetes.io/dockerconfigjson
-data:
-  .dockerconfigjson: <DIN_BASE64_DOCKERCONFIGJSON>
 
 ---
 apiVersion: v1
@@ -143,7 +138,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: backend
-        image: quay.io/arashrahimi/arashr:REPLACE_BY_CI
+        image: quay.io/arashrahimi/arashr-backend:latest
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
