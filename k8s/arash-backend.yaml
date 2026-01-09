@@ -1,3 +1,125 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arash-db-config
+  namespace: grupp3
+data:
+  db-name: arash_guestbook
+  db-host: arash-postgres
+  db-port: "5432"
+  db-user: postgres
+  redis-host: arash-redis
+  redis-port: "6379"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: arash-db-password
+  namespace: grupp3
+type: Opaque
+stringData:
+  password: arash-password-123
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quay-io-secret
+  namespace: grupp3
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: <DIN_BASE64_DOCKERCONFIGJSON>
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: arash-postgres-pvc
+  namespace: grupp3
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arash-postgres
+  namespace: grupp3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arash-guestbook
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: arash-guestbook
+        component: postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: postgres
+        image: quay.io/fedora/postgresql-15:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          runAsNonRoot: true
+        env:
+        - name: POSTGRESQL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: arash-db-password
+              key: password
+        - name: POSTGRESQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: arash-db-config
+              key: db-name
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: arash-postgres-data
+          mountPath: /var/lib/pgsql/data
+      volumes:
+      - name: arash-postgres-data
+        persistentVolumeClaim:
+          claimName: arash-postgres-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arash-redis
+  namespace: grupp3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arash-guestbook
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: arash-guestbook
+        component: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,59 +150,6 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            drop: [ "ALL" ]
+            drop: [ALL]
         ports:
         - containerPort: 8080
-        env:
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: arash-db-config
-              key: db-host
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: arash-db-config
-              key: db-port
-        - name: DB_USER
-          valueFrom:
-            configMapKeyRef:
-              name: arash-db-config
-              key: db-user
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: arash-db-config
-              key: db-name
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: arash-db-password
-              key: password
-        - name: REDIS_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: arash-db-config
-              key: redis-host
-        - name: REDIS_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: arash-db-config
-              key: redis-port
-        resources:
-          requests:
-            cpu: 50m
-            memory: 64Mi
-          limits:
-            cpu: 80m
-            memory: 256Mi
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 5
