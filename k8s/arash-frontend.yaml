@@ -1,49 +1,80 @@
+---
+# Frontend Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: arash-frontend
-  name: frontend
+  namespace: grupp3
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: arash-guestbook
-      app: guestbook
       component: frontend
   template:
     metadata:
       labels:
         app: arash-guestbook
-        app: guestbook
         component: frontend
     spec:
+      imagePullSecrets:
+      - name: quay-io-secret
       containers:
       - name: frontend
-        image: guestbook-frontend:latest
+        image: quay.io/arashrahimi/arashr-frontend:latest
+        imagePullPolicy: Always
+        env:
+        - name: REACT_APP_BACKEND_URL
+          value: "http://arash-backend-grupp3.apps.devops24.cloud2.se"
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
 ---
+# Frontend Service
 apiVersion: v1
 kind: Service
 metadata:
   name: arash-frontend
-  name: frontend
+  namespace: grupp3
 spec:
   type: ClusterIP
   selector:
     app: arash-guestbook
-    app: guestbook
     component: frontend
   ports:
   - port: 8080
     targetPort: 8080
+
 ---
+# Frontend Route
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: arash-frontend
-  name: frontend
+  namespace: grupp3
 spec:
   to:
     kind: Service
     name: arash-frontend
+    weight: 100
   port:
     targetPort: 8080
